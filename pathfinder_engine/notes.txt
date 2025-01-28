@@ -1,0 +1,3 @@
+# hacer un logger
+# conseguir que por lo menos haga un algoritmo de busqueda
+# sacar metricas de tiempo

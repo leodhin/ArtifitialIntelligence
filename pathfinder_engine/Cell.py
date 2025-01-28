@@ -1,6 +1,11 @@
 WEIGHT_DISTANCE = 10
 exit = (6, 6)
 
+class Coordinates:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+    
 # Class to represent a cell in the grid
 class Cell:
     def __init__(self, pos, parent):
@@ -18,8 +23,9 @@ class Cell:
         self.g = self.parent.g + WEIGHT_DISTANCE
     # set the h value
     def calculateHeuristic(self):
-        self.h = abs(self.pos[0] - exit[0]) + abs(self.pos[1] - exit[1])
+        self.h = abs(self.pos.x - exit[0]) + abs(self.pos.y - exit[1])
         return self.h
+    
     # set the f value
     def calculateF(self):
         self.f = self.g + self.h
