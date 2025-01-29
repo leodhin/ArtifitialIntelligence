@@ -2,9 +2,9 @@ import json as json
 from Cell import Cell, Coordinates
 from gui import GUI
 
-from constants import PIXE_SIZE
+from constants import PIXE_SIZE, WEIGHT_DISTANCE
 
-with open('maze4.json') as f:
+with open('maze1.json') as f:
     maze = json.load(f)
 
 current = None
@@ -16,7 +16,7 @@ mapped_maze = [[None for _ in range(len(maze))] for _ in range(len(maze))]
 
 gui = GUI(mapped_maze)
 
-def draw_maze():
+def render_maze():
     global start
     global end
     for i, row in enumerate(maze):
@@ -44,9 +44,17 @@ def draw_maze():
                 end = Cell(coordinates, None)
             
             gui.fill_tile(newCell, fill_color)
-            gui.canvas.create_text(x1 + 90, y1 + 90, text=(f'h = {newCell.calculateHeuristic()}'), fill="black", anchor="se")
             mapped_maze[j][i] = newCell
-            
+    draw_heuristics()
+      
+# draw the heuristics
+def draw_heuristics():
+  for i in range(len(maze)):
+      for j in range(len(maze)):
+          cell = mapped_maze[i][j]
+          gui.canvas.create_text(cell.pos.x * PIXE_SIZE + 90, cell.pos.y * PIXE_SIZE +90, fill="blue", text=(f'h = {cell.calculateHeuristic(end.pos)}'), anchor="se")
+
+          
             
 
 def get_neighbors(cell: Cell):
@@ -72,10 +80,9 @@ def a_star():
     closed_list = []
     
     open_list.append(start)
-
     while(len(open_list) > 0):
         # set interval to 1s
-        #gui.window.after(200)
+        gui.window.after(200)
         current = open_list[0]
                   
 
@@ -93,6 +100,11 @@ def a_star():
         # Check if we have reached the end
         if current.isEnd == True:
           gui.fill_tile(current, "purple")
+          gui.color_border(current, "red")
+          
+          while current.parent != None:
+            gui.color_border(current.parent, "yellow")
+            current = current.parent
           break
         
         children = []
@@ -104,7 +116,7 @@ def a_star():
             children.append(new_cell)
             if len(closed_list) > 0:
               new_cell.parent = current
-              new_cell.calculateValues()
+              new_cell.calculateValues(end.pos)
             
         for child in children:
             if child in closed_list:
@@ -114,16 +126,17 @@ def a_star():
                 continue
             
             open_list.append(child)
-            gui.canvas.create_text(child.pos.x * PIXE_SIZE + 10, child.pos.y * PIXE_SIZE + 90, fill="red", text=(f'g = {child.g}'), anchor="sw")
-            gui.canvas.create_text(child.pos.x * PIXE_SIZE + 90, child.pos.y * PIXE_SIZE + 10, fill="red",  text=(f'f = {child.f}'), anchor="ne")
+            gui.canvas.create_text(child.pos.x * PIXE_SIZE + 10, child.pos.y * PIXE_SIZE + 90, fill="blue", text=(f'g = {child.g}'), anchor="sw")
+            gui.canvas.create_text(child.pos.x * PIXE_SIZE + 90, child.pos.y * PIXE_SIZE + 10, fill="blue",  text=(f'f = {child.f}'), anchor="ne")
         
-        # Color yellow the border cell
+        # Color red the border cell
         gui.color_border(current, "red")
-        
+
+    return current
+
 if __name__ == "__main__":
-    draw_maze()
-    a_star()
-    
+    render_maze()
+    result = a_star()
+  
     # tick of 1s per loop
     gui.window.mainloop()
-    #get_neighbors(start)
