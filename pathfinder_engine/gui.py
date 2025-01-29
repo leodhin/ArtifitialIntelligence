@@ -2,8 +2,7 @@ import tkinter as tk
 import json as json
 
 import Cell as Cell
-    
-PIXE_SIZE = 100
+from constants import PIXE_SIZE
 
 class GUI:
     def __init__(self, maze):
@@ -16,9 +15,17 @@ class GUI:
         print("GUI initialized")
         
     def fill_tile(self, cell: Cell, color: str):
-        x1 = cell.pos.y * PIXE_SIZE
-        y1 = cell.pos.x * PIXE_SIZE
+        x1 = cell.pos.x * PIXE_SIZE
+        y1 = cell.pos.y * PIXE_SIZE
         x2 = x1 + PIXE_SIZE
         y2 = y1 + PIXE_SIZE
         self.canvas.create_rectangle(x1, y1, x2, y2, outline="black", fill=color, width=1)
+        self.window.update()
+    
+    def color_border(self, cell: Cell, color: str):
+        x1 = cell.pos.x * PIXE_SIZE
+        y1 = cell.pos.y * PIXE_SIZE
+        x2 = x1 + PIXE_SIZE
+        y2 = y1 + PIXE_SIZE
+        self.canvas.create_rectangle(x1, y1, x2, y2, outline=color, width=3)
         self.window.update()

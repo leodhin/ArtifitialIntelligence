@@ -1,5 +1,5 @@
 WEIGHT_DISTANCE = 10
-exit = (6, 6)
+exit = (3, 3)
 
 class Coordinates:
     def __init__(self, x, y):
@@ -14,13 +14,16 @@ class Cell:
         self.g = 0
         self.h = 0
         self.f = 0
-        self.isWalkable = False
+        self.isWalkable = True
         self.isEnd = False
         self.isStart = False
         
     # set the g value
     def calculateAccumulatedWeight(self):
-        self.g = self.parent.g + WEIGHT_DISTANCE
+        if self.parent == None:
+            self.g = WEIGHT_DISTANCE
+        else:
+          self.g = self.parent.g + WEIGHT_DISTANCE
     # set the h value
     def calculateHeuristic(self):
         self.h = abs(self.pos.x - exit[0]) + abs(self.pos.y - exit[1])
@@ -38,3 +41,7 @@ class Cell:
     # set the h value
     def set_h(self, value):
         self.h = value
+    
+    # print the cell
+    def __str__(self):
+        return f'Cell({self.pos.x}, {self.pos.y})'

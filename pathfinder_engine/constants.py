@@ -1,0 +1,1 @@
+PIXE_SIZE = 50

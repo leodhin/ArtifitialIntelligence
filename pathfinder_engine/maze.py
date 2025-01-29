@@ -1,9 +1,10 @@
 import json as json
-
 from Cell import Cell, Coordinates
 from gui import GUI
 
-with open('maze1.json') as f:
+from constants import PIXE_SIZE
+
+with open('maze4.json') as f:
     maze = json.load(f)
 
 current = None
@@ -13,21 +14,17 @@ end = None
 
 mapped_maze = [[None for _ in range(len(maze))] for _ in range(len(maze))]
 
-gui = GUI(maze)
+gui = GUI(mapped_maze)
 
-PIXE_SIZE = 100
-        
 def draw_maze():
     global start
     global end
     for i, row in enumerate(maze):
         for j, tile in enumerate(row):
             # Calculate pixel positions
-            x1 = j * PIXE_SIZE
-            y1 = i * PIXE_SIZE
-            x2 = x1 + PIXE_SIZE
-            y2 = y1 + PIXE_SIZE
-            coordinates = Coordinates(i, j)
+            x1 = i * PIXE_SIZE
+            y1 = j * PIXE_SIZE
+            coordinates = Coordinates(j, i)
             
             newCell = Cell(coordinates, None)
             # Draw the rectangles based on cell type
@@ -48,7 +45,7 @@ def draw_maze():
             
             gui.fill_tile(newCell, fill_color)
             gui.canvas.create_text(x1 + 90, y1 + 90, text=(f'h = {newCell.calculateHeuristic()}'), fill="black", anchor="se")
-            mapped_maze[i][j] = newCell
+            mapped_maze[j][i] = newCell
             
             
 
@@ -67,68 +64,66 @@ def get_neighbors(cell: Cell):
     # Check if the cell is the bottom wall
     if j < len(maze) - 1 and mapped_maze[i][j + 1].isWalkable:
         neighbors.append((i, j + 1))
-        
+    
     return neighbors
-    
 
-def color_cell(cell: Cell, color: str):
-    x1 = cell.pos.y * PIXE_SIZE
-    y1 = cell.pos.x * PIXE_SIZE
-    x2 = x1 + PIXE_SIZE
-    y2 = y1 + PIXE_SIZE
-    gui.canvas.create_rectangle(x1, y1, x2, y2, outline="black", fill=color, width=1)
-    
 def a_star():    
     open_list = []
     closed_list = []
     
     open_list.append(start)
-  
+
     while(len(open_list) > 0):
+        # set interval to 1s
+        #gui.window.after(200)
         current = open_list[0]
+                  
+
+        current_cell = 0
         
-        # Color yellow the current cell
-        gui.fill_tile(current, "yellow")
-        
-        current_index = 0
-        for index, item in enumerate(open_list):
-            if item.f < current.f:
-                current = item
-                current_index = index
-        open_list.pop(current_index)
+        # Order the open list by f value
+        for index, cell in enumerate(open_list):
+            if cell.f < current.f:
+                current = cell
+                current_cell = index
+                
+        open_list.pop(current_cell)
         closed_list.append(current)
         
-        if current == end:
-            path = []
-            current = current
-            while current is not None:
-                path.append(current.pos)
-                current = current.parent
-            break
+        # Check if we have reached the end
+        if current.isEnd == True:
+          gui.fill_tile(current, "purple")
+          break
         
         children = []
-        for new_position in get_neighbors(current):
-            coordinates = Coordinates(new_position[0], new_position[1])
-            new_cell = Cell(coordinates, current)
-            children.append(new_cell)
+        # Get the neighbors of the current cell
         
+        # Iterate over the neighbors and populate the open list
+        for neighbour in get_neighbors(current):
+            new_cell = mapped_maze[neighbour[0]][neighbour[1]]
+            children.append(new_cell)
+            if len(closed_list) > 0:
+              new_cell.parent = current
+              new_cell.calculateValues()
+            
         for child in children:
             if child in closed_list:
                 continue
-            
-            child.calculateValues()
             
             if child in open_list:
                 continue
             
             open_list.append(child)
-            
-        for child in children:
-            gui.canvas.create_text(child.pos.x * PIXE_SIZE + 10, child.pos.y * PIXE_SIZE + 90, text=(f'g = {child.g}'), anchor="sw")
-            gui.canvas.create_text(child.pos.x * PIXE_SIZE + 90, child.pos.y * PIXE_SIZE + 10, text=(f'f = {child.f}'), anchor="ne")
-    
+            gui.canvas.create_text(child.pos.x * PIXE_SIZE + 10, child.pos.y * PIXE_SIZE + 90, fill="red", text=(f'g = {child.g}'), anchor="sw")
+            gui.canvas.create_text(child.pos.x * PIXE_SIZE + 90, child.pos.y * PIXE_SIZE + 10, fill="red",  text=(f'f = {child.f}'), anchor="ne")
+        
+        # Color yellow the border cell
+        gui.color_border(current, "red")
+        
 if __name__ == "__main__":
     draw_maze()
     a_star()
+    
+    # tick of 1s per loop
     gui.window.mainloop()
     #get_neighbors(start)
