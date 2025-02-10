@@ -1,5 +1,4 @@
-#make an app where I can draw with a pblack pencil on a canvas 28x28 and then predict the number
-#I will use the model I trained before
+from utils import forward_prop, backward_prop
 
 import numpy as np
 from tkinter import *
@@ -13,19 +12,16 @@ b1 = model['b1']
 W2 = model['W2']
 b2 = model['b2']
 
+#function to decode number into letter (1-26)
+def decode(number):
+    return chr(number + 96)
+
 def ReLU(Z):
     return np.maximum(0, Z)
 
 def softmax(Z):
     A = np.exp(Z) / sum(np.exp(Z))
     return A
-
-def forward_prop(W1, b1, W2, b2, X):
-    Z1 = W1.dot(X) + b1
-    A1 = ReLU(Z1)
-    Z2 = W2.dot(A1) + b2
-    A2 = softmax(Z2)
-    return Z1, A1, Z2, A2
 
 def get_predictions(A2):
     return np.argmax(A2, 0)
@@ -34,7 +30,6 @@ def preprocess_image(image):
     image = image.convert('L')  # Convert to grayscale
     image = image.resize((28, 28))  # Resize to 28x28
     image = np.array(image).flatten()  # Flatten to 1D array
-    image = image / 255.0  # Normalize pixel values
     image = image.reshape(784, 1)  # Reshape to (784, 1)
     
     return image
@@ -47,15 +42,15 @@ def predict(image, W1, b1, W2, b2):
 
 def clear():
     cv.delete("all")
-    draw.rectangle([0, 0, 200, 200], fill="black")
+    draw.rectangle([0, 0, 280, 280], fill="black")
     
 def save():
     filename = "image.png"
-    image.save(filename)
+    image.resize((28, 28)).save(filename)
     image1 = Image.open(filename)
     predictions = predict(image1, W1, b1, W2, b2)
     prediction.config(text="Prediction: " + str(predictions[0]))
-    print(predictions)
+    print(decode(predictions[0]))
     
 def paint(event):
     x1, y1 = (event.x - 1), (event.y - 1)
@@ -64,10 +59,10 @@ def paint(event):
     draw.line([x1, y1, x2, y2], fill=255, width=5)
     
 root = Tk()
-cv = Canvas(root, width=200, height=200, bg='white')
+cv = Canvas(root, width=280, height=280, bg='white')
 cv.pack()
 
-image = PIL.Image.new("L", (200, 200), 0)
+image = PIL.Image.new("L", (280, 280), 0)
 draw = ImageDraw.Draw(image)
 cv.pack(expand=YES, fill=BOTH)
 cv.bind("<B1-Motion>", paint)

@@ -4,20 +4,14 @@ import pandas as pd
 from utils import forward_prop, backward_prop
 
 # Read data from a CSV file
-data = pd.read_csv('./train.csv')
+data = pd.read_csv('./emnist-letters-test.csv')
 head = data.head()
 
 # Convert the data to a NumPy array
 data = np.array(data)
 m, n = data.shape
-np.random.shuffle(data) # shuffle before splitting into dev and training sets
 
-data_dev = data[0:1000].T
-Y_dev = data_dev[0]
-X_dev = data_dev[1:n]
-X_dev = X_dev / 255.
-
-data_train = data[1000:m].T
+data_train = data.T
 Y_train = data_train[0]
 X_train = data_train[1:n]
 X_train = X_train / 255.
@@ -25,10 +19,10 @@ _,m_train = X_train.shape
 
 # weight and biases
 def init_params():
-    W1 = np.random.rand(10, 784) - 0.5 # 10 neurons in the first hidden layer, 784 input features - Matrix 10rowsx784columns
-    b1 = np.random.rand(10, 1) - 0.5  # Bias for the 10 neurons in the first hidden layer
-    W2 = np.random.rand(10, 10) - 0.5 # 10 neurons in the output layer, 10 neurons in the hidden layer Matrix 10rowsx10columns
-    b2 = np.random.rand(10, 1) - 0.5  # Bias for the 10 neurons in the output layer
+    W1 = np.random.rand(20, 784) - 0.5  # 26 neurons in the first hidden layer, 784 input features (28x28 image flattened)
+    b1 = np.random.rand(20, 1) - 0.5   # Bias for the 26 neurons in the first hidden layer
+    W2 = np.random.rand(20, 20) - 0.5  # 26 neurons in the output layer, 26 neurons in the hidden layer
+    b2 = np.random.rand(20, 1) - 0.5   # Bias for the 26 neurons in the output layer
     return W1, b1, W2, b2
 
 def update_params(W1, b1, W2, b2, dW1, db1, dW2, db2, alpha):
@@ -62,11 +56,7 @@ def gradient_descent(X, Y, alpha, iterations):
             print(get_accuracy(predictions, Y))
     return W1, b1, W2, b2
 
-W1, b1, W2, b2 = gradient_descent(X_train, Y_train, 1, 500)
-
-
-dev_predictions = make_predictions(X_dev, W1, b1, W2, b2)
-get_accuracy(dev_predictions, Y_dev)
+W1, b1, W2, b2 = gradient_descent(X_train, Y_train, 0.5, 1000)
 
 # save the model
-np.savez('model-digits.npz', W1=W1, b1=b1, W2=W2, b2=b2)
+np.savez('model-letters.npz', W1=W1, b1=b1, W2=W2, b2=b2)
