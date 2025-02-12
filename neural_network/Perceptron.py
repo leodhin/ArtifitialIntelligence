@@ -42,7 +42,7 @@ class Perceptron:
     A2 = softmax(Z2)
     return Z1, A1, Z2, A2
   
-  def gradient_descent(self, X, Y, alpha, iterations):
+  def train(self, X, Y, alpha, iterations):
     W1, b1, W2, b2 = self.init_params()
     for i in range(iterations):
         Z1, A1, Z2, A2 = self.forward_prop(W1, b1, W2, b2, X)

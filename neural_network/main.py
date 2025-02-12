@@ -26,10 +26,9 @@ _,m_train = X_train.shape
 
 
 nn = NeuralNetwork(784, 10, m)
-W1, b1, W2, b2 = nn.gradient_descent(X_train, Y_train, 1, 500)
-
-
+W1, b1, W2, b2 = nn.train(X_train, Y_train, 1, 500)
 dev_predictions = nn.make_predictions(X_dev, W1, b1, W2, b2)
+
 get_accuracy(dev_predictions, Y_dev)
 
 # save the model
