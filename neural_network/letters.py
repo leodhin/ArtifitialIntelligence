@@ -4,7 +4,7 @@ import pandas as pd
 from utils import forward_prop, backward_prop
 
 # Read data from a CSV file
-data = pd.read_csv('./emnist-letters-test.csv')
+data = pd.read_csv('./emnist-letters-train.csv')
 head = data.head()
 
 # Convert the data to a NumPy array
@@ -19,10 +19,10 @@ _,m_train = X_train.shape
 
 # weight and biases
 def init_params():
-    W1 = np.random.rand(20, 784) - 0.5  # 26 neurons in the first hidden layer, 784 input features (28x28 image flattened)
-    b1 = np.random.rand(20, 1) - 0.5   # Bias for the 26 neurons in the first hidden layer
-    W2 = np.random.rand(20, 20) - 0.5  # 26 neurons in the output layer, 26 neurons in the hidden layer
-    b2 = np.random.rand(20, 1) - 0.5   # Bias for the 26 neurons in the output layer
+    W1 = np.random.rand(27, 784) - 0.5  # 26 neurons in the first hidden layer, 784 input features (28x28 image flattened)
+    b1 = np.random.rand(27, 1) - 0.5   # Bias for the 26 neurons in the first hidden layer
+    W2 = np.random.rand(27, 27) - 0.5  # 26 neurons in the output layer, 26 neurons in the hidden layer
+    b2 = np.random.rand(27, 1) - 0.5   # Bias for the 26 neurons in the output layer
     return W1, b1, W2, b2
 
 def update_params(W1, b1, W2, b2, dW1, db1, dW2, db2, alpha):
@@ -56,7 +56,7 @@ def gradient_descent(X, Y, alpha, iterations):
             print(get_accuracy(predictions, Y))
     return W1, b1, W2, b2
 
-W1, b1, W2, b2 = gradient_descent(X_train, Y_train, 0.5, 1000)
+W1, b1, W2, b2 = gradient_descent(X_train, Y_train, 1, 500)
 
 # save the model
 np.savez('model-letters.npz', W1=W1, b1=b1, W2=W2, b2=b2)

@@ -4,15 +4,18 @@ import numpy as np
 from tkinter import *
 import PIL
 from PIL import Image, ImageDraw
-# import model.npz file
-model = np.load('model-digits.npz')
 
-W1 = model['W1']
-b1 = model['b1']
-W2 = model['W2']
-b2 = model['b2']
+# Global variables for models
+model_digits = np.load('model-digits.npz')
+model_letters = np.load('model-letters.npz')
 
-#function to decode number into letter (1-26)
+W1_digits, b1_digits, W2_digits, b2_digits = model_digits['W1'], model_digits['b1'], model_digits['W2'], model_digits['b2']
+W1_letters, b1_letters, W2_letters, b2_letters = model_letters['W1'], model_letters['b1'], model_letters['W2'], model_letters['b2']
+
+# Initialize with digits model
+W1, b1, W2, b2 = W1_digits, b1_digits, W2_digits, b2_digits
+
+# Function to decode number into letter (1-26)
 def decode(number):
     return chr(number + 97)
 
@@ -29,9 +32,8 @@ def get_predictions(A2):
 def preprocess_image(image):
     image = image.convert('L')  # Convert to grayscale
     image = image.resize((28, 28))  # Resize to 28x28
-    image = np.array(image).flatten() / 255.0 # Flatten to 1D array
+    image = np.array(image).flatten() / 255.0  # Flatten to 1D array
     image = image.reshape(784, 1)  # Reshape to (784, 1)
-    
     return image
 
 def predict(image, W1, b1, W2, b2):
@@ -43,15 +45,22 @@ def predict(image, W1, b1, W2, b2):
 def clear():
     cv.delete("all")
     draw.rectangle([0, 0, 280, 280], fill="black")
-    
+
 def save():
     filename = "image.png"
     image.resize((28, 28)).save(filename)
     image1 = Image.open(filename)
     predictions = predict(image1, W1, b1, W2, b2)
-    prediction.config(text="Prediction: " + str(predictions[0]))
-    print(decode(predictions[0]))
+    output = ""
+    # If the select model is letters then decode
+    if model_var.get() == "Letters":
+        output = str(decode(predictions[0]))
+    else:
+        output = str(predictions[0])
+    prediction.config(text="Prediction: " + output)
     
+    print(output)
+
 def paint(event):
     x1, y1 = (event.x - 1), (event.y - 1)
     x2, y2 = (event.x + 1), (event.y + 1)
@@ -105,7 +114,12 @@ def update_model():
 
     prediction.config(text=f"✅ Modelo actualizado con: {real_value}")
 
-
+def select_model(selection):
+    global W1, b1, W2, b2
+    if selection == "Digits":
+        W1, b1, W2, b2 = W1_digits, b1_digits, W2_digits, b2_digits
+    elif selection == "Letters":
+        W1, b1, W2, b2 = W1_letters, b1_letters, W2_letters, b2_letters
 
 root = Tk()
 cv = Canvas(root, width=280, height=280, bg='white')
@@ -116,13 +130,13 @@ draw = ImageDraw.Draw(image)
 cv.pack(expand=YES, fill=BOTH)
 cv.bind("<B1-Motion>", paint)
 
-button=Button(text="save",command=save)
+button = Button(text="save", command=save)
 button.pack()
 
-clear_button=Button(text="clear",command=clear)
+clear_button = Button(text="clear", command=clear)
 clear_button.pack()
 
-prediction=Label(text="Prediction: ")
+prediction = Label(text="Prediction: ")
 prediction.pack()
 
 button_update = Button(root, text="Actualizar Modelo", command=update_model)
@@ -131,7 +145,10 @@ button_update.pack()
 entry = Entry(root)
 entry.pack()
 
-
-
+# Model selector
+model_var = StringVar(root)
+model_var.set("Digits")  # Default value
+model_selector = OptionMenu(root, model_var, "Digits", "Letters", command=select_model)
+model_selector.pack()
 
 root.mainloop()
