@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from utils import forward_prop, backward_prop
+from utils import get_accuracy
 from Perceptron import Perceptron as NeuralNetwork
 
 # Read data from a CSV file
@@ -25,36 +25,11 @@ X_train = X_train / 255.
 _,m_train = X_train.shape
 
 
-neural_network = NeuralNetwork(784, 10)
-
-def get_predictions(A2):
-    return np.argmax(A2, 0)
-
-def make_predictions(X, W1, b1, W2, b2):
-    _, _, _, A2 = forward_prop(W1, b1, W2, b2, X)
-    predictions = get_predictions(A2)
-    return predictions
-
-def get_accuracy(predictions, Y):
-    print(predictions, Y)
-    return np.sum(predictions == Y) / Y.size
-
-def gradient_descent(X, Y, alpha, iterations):
-    W1, b1, W2, b2 = neural_network.init_params()
-    for i in range(iterations):
-        Z1, A1, Z2, A2 = forward_prop(W1, b1, W2, b2, X)
-        dW1, db1, dW2, db2 = backward_prop(Z1, A1, A2, W2, X, Y, m)
-        W1, b1, W2, b2 = neural_network.update_params(W1, b1, W2, b2, dW1, db1, dW2, db2, alpha)
-        if i % 10 == 0:
-            print("Iteration: ", i)
-            predictions = get_predictions(A2)
-            print(get_accuracy(predictions, Y))
-    return W1, b1, W2, b2
-
-W1, b1, W2, b2 = gradient_descent(X_train, Y_train, 1, 500)
+nn = NeuralNetwork(784, 10, m)
+W1, b1, W2, b2 = nn.gradient_descent(X_train, Y_train, 1, 500)
 
 
-dev_predictions = make_predictions(X_dev, W1, b1, W2, b2)
+dev_predictions = nn.make_predictions(X_dev, W1, b1, W2, b2)
 get_accuracy(dev_predictions, Y_dev)
 
 # save the model
