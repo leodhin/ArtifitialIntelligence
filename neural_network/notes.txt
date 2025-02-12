@@ -1,0 +1,3 @@
+# Poder escalar verticalmente y horizontalmente (hidden layers, profundidad nodes)
+# Opcion de poder cargar el Perceptron de cargar un modelo (npz)
+# Conseguir que llegue a un 100 de digitos de precision

@@ -17,7 +17,8 @@ W1, b1, W2, b2 = W1_digits, b1_digits, W2_digits, b2_digits
 
 # Function to decode number into letter (1-26)
 def decode(number):
-    return chr(number + 97)
+    print("Number decoding", number)
+    return chr(number + 64)
 
 def ReLU(Z):
     return np.maximum(0, Z)
@@ -91,8 +92,12 @@ def update_model():
     # Obtener la propagación hacia adelante
     Z1, A1, Z2, A2 = forward_prop(W1, b1, W2, b2, X)
     
-    # Crear la etiqueta correcta en formato one-hot (para números 0-9)
-    one_hot_Y = np.zeros((10, 1))  # 10 clases (0-9)
+     # Crear la etiqueta correcta en formato one-hot
+    if model_var.get() == "Digits":
+        one_hot_Y = np.zeros((10, 1))  # 10 clases (0-9)
+    else:
+        one_hot_Y = np.zeros((27, 1))  # 27 clases (0-26)
+        
     one_hot_Y[real_value] = 1  
     
     dZ2 = A2 - one_hot_Y
