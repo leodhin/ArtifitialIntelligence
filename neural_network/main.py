@@ -25,8 +25,17 @@ X_train = X_train / 255.
 _,m_train = X_train.shape
 
 
-nn = NeuralNetwork(784, 10, m)
-W1, b1, W2, b2 = nn.train(X_train, Y_train, 1, 500)
+config = {
+  'input_size': 784,
+  'hidden_size': 128,
+  'output_size': 10,
+  'num_samples': m,
+  'alpha': .5,
+  'iterations': 500
+}
+
+nn = NeuralNetwork(config)
+W1, b1, W2, b2 = nn.train(X_train, Y_train)
 dev_predictions = nn.make_predictions(X_dev, W1, b1, W2, b2)
 
 get_accuracy(dev_predictions, Y_dev)
