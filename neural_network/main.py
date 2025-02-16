@@ -5,7 +5,7 @@ from utils import get_accuracy
 from Perceptron import Perceptron as NeuralNetwork
 
 # Read data from a CSV file
-data = pd.read_csv('./train.csv')
+data = pd.read_csv('./dataset/mnist-digits-train.csv')
 head = data.head()
 
 # Convert the data to a NumPy array
@@ -27,7 +27,7 @@ _,m_train = X_train.shape
 
 config = {
   'input_size': 784,
-  'hidden_size': 128,
+  'hidden_size': 10,
   'output_size': 10,
   'num_samples': m,
   'alpha': .5,
@@ -38,7 +38,7 @@ nn = NeuralNetwork(config)
 W1, b1, W2, b2 = nn.train(X_train, Y_train)
 dev_predictions = nn.make_predictions(X_dev, W1, b1, W2, b2)
 
-get_accuracy(dev_predictions, Y_dev)
-
+accuracy = get_accuracy(dev_predictions, Y_dev)
+print("Accuracy: ", accuracy)
 # save the model
 np.savez('model-digits.npz', W1=W1, b1=b1, W2=W2, b2=b2)

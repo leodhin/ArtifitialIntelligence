@@ -12,8 +12,8 @@ model_letters = np.load('model-letters.npz')
 W1_digits, b1_digits, W2_digits, b2_digits = model_digits['W1'], model_digits['b1'], model_digits['W2'], model_digits['b2']
 W1_letters, b1_letters, W2_letters, b2_letters = model_letters['W1'], model_letters['b1'], model_letters['W2'], model_letters['b2']
 
-# Initialize with digits model
-W1, b1, W2, b2 = W1_digits, b1_digits, W2_digits, b2_digits
+# Initialize with letters model
+W1, b1, W2, b2 = W1_letters, b1_letters, W2_letters, b2_letters
 
 # Function to decode number into letter (1-26)
 def decode(number):
@@ -24,7 +24,7 @@ def ReLU(Z):
     return np.maximum(0, Z)
 
 def softmax(Z):
-    A = np.exp(Z) / sum(np.exp(Z))
+    A = np.exp(Z) / np.sum(np.exp(Z), axis=0, keepdims=True)
     return A
 
 def get_predictions(A2):
@@ -115,7 +115,10 @@ def update_model():
     b2 -= alpha * db2
 
     # Guardar el modelo actualizado SOLO para números
-    np.savez('model-digits.npz', W1=W1, b1=b1, W2=W2, b2=b2)
+    if model_var.get() == "Digits":
+      np.savez('model-digits.npz', W1=W1, b1=b1, W2=W2, b2=b2)
+    elif model_var.get() == "Letters":
+     np.savez('model-letters.npz', W1=W1, b1=b1, W2=W2, b2=b2)
 
     prediction.config(text=f"✅ Modelo actualizado con: {real_value}")
 
@@ -152,7 +155,7 @@ entry.pack()
 
 # Model selector
 model_var = StringVar(root)
-model_var.set("Digits")  # Default value
+model_var.set("Letters")  # Default value
 model_selector = OptionMenu(root, model_var, "Digits", "Letters", command=select_model)
 model_selector.pack()
 
