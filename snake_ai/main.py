@@ -18,10 +18,11 @@ if __name__ == "__main__":
     agent = QLearningAgent()
 
     if choice == "1":
-        num_episodes = 10000
+        num_episodes = NUM_EPISODES
         actual_episode = 0
         total_score = 0
         average_score = 0
+        best_score = 0
 
         if os.path.exists("q_table.pkl"):
             with open("q_table.pkl", "rb") as f:
@@ -30,23 +31,22 @@ if __name__ == "__main__":
 
             agent.epsilon = EPSILON_MIN  # Reducimos exploración para aprovechar lo aprendido
 
-        while actual_episode < num_episodes:
-        #while average_score < 1618:
-            state = game.reset()
+        #while actual_episode < num_episodes:
+        while game.score < 1000:
+            
             done = False
-            episode_score = 0 
-            
-            print(f"\rEntrenando - Episodio {actual_episode + 1}/{num_episodes} - Promedio Score: {average_score:.2f}", end='', flush=True)
-            
+            state = game.reset()
             while not done:
-                action = agent.choose_action(state)
+                action = agent.choose_action(state, game.direction)
                 next_state, reward, done = game.step(action)
                 
-                episode_score += reward  
+             
                 agent.update_q(state, action, reward, next_state)
                 state = next_state
             
-            total_score += episode_score
+            total_score += game.score
+            best_score = max(best_score, game.score)
+            print(f"\rEpisodio {actual_episode + 1}/{num_episodes} - Mejor Score: {best_score} - Promedio Score: {average_score:.2f}", end='', flush=True)
             actual_episode += 1
             average_score = total_score / (actual_episode + 1)
             agent.decay_epsilon()
@@ -78,7 +78,7 @@ if __name__ == "__main__":
         state = game.reset()
         game.running = True
         while game.running:
-            action = agent.choose_action(state)
+            action = agent.choose_action(state, game.direction)
             state, _, done = game.step(action)
             game.draw()
             game.clock.tick(10)

@@ -55,6 +55,9 @@ class SnakeGame:
                 reward = REWARD_MOVE_AWAY_FOOD  # Penalización por alejarse
             else:
                 reward = REWARD_SAFE_MOVE  # Recompensa por moverse sin alejarse
+            # **Nueva penalización si la serpiente se está encerrando**
+            if self.is_trapped():
+                reward += REWARD_TRAPPED  # Penalización adicional
 
             self.snake.pop()  # Evita crecimiento indebido
             return reward, False
@@ -117,5 +120,25 @@ class SnakeGame:
         font = pygame.font.Font(None, 36)
         score_text = font.render(f"Score: {self.score}", True, WHITE)
         self.screen.blit(score_text, (WIDTH - 120, 10))
+
+    def is_trapped(self):
+        head_x, head_y = self.snake[0]
+        free_spaces = 0
+
+        # Verificar las direcciones disponibles (izquierda, derecha, arriba, abajo)
+        possible_moves = [
+            (head_x - GRID_SIZE, head_y),  # Izquierda
+            (head_x + GRID_SIZE, head_y),  # Derecha
+            (head_x, head_y - GRID_SIZE),  # Arriba
+            (head_x, head_y + GRID_SIZE)   # Abajo
+        ]
+
+        for move in possible_moves:
+            if move not in self.snake and 0 <= move[0] < WIDTH and 0 <= move[1] < HEIGHT:
+                free_spaces += 1
+
+        # Si hay menos de 2 espacios libres, está atrapado
+        return free_spaces < 2
+
 
 
