@@ -8,7 +8,9 @@ def ReLU(Z):
 def softmax(Z):
     A = np.exp(Z) / sum(np.exp(Z))
     return A
-    
+
+def sigmoid(Z):
+    return 1 / (1 + np.exp(-Z))
 
 def ReLU_deriv(Z):
     return Z > 0
@@ -23,15 +25,17 @@ def get_predictions(A2):
     return np.argmax(A2, 0)
 
 def get_accuracy(predictions, Y):
-    print(predictions, Y)
     return np.sum(predictions == Y) / Y.size
 
-
-def forward_prop(W1, b1, W2, b2, X):
+def forward_prop(W1, b1, W2, b2, X, m):
   Z1 = W1.dot(X) + b1
   A1 = ReLU(Z1)
   Z2 = W2.dot(A1) + b2
-  A2 = softmax(Z2)
+  A2
+  if m == 1:
+    A2 = sigmoid(Z2)
+  else:
+    A2 = softmax(Z2)
   return Z1, A1, Z2, A2
 
 def backward_prop(Z1, A1, A2, W2, X, Y, m):

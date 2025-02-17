@@ -1,5 +1,5 @@
 import numpy as np
-from utils import get_predictions, get_accuracy, ReLU, softmax, one_hot, ReLU_deriv
+from utils import get_predictions, get_accuracy, ReLU, softmax, sigmoid, one_hot, ReLU_deriv
 
 # Define the Perceptron class
 class Perceptron:
@@ -32,6 +32,10 @@ class Perceptron:
         A1 = ReLU(Z1)
         Z2 = W2.dot(A1) + b2
         A2 = softmax(Z2)
+        if self.n_output_neurons == 2:
+          A2 = sigmoid(Z2)
+        else:
+          A2 = softmax(Z2)
         return Z1, A1, Z2, A2
   
     def train(self, X, Y):
