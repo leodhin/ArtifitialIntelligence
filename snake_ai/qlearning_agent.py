@@ -1,22 +1,23 @@
 import random
 from configuration import *
+from utils import QLearningAlgroithm
 
 class QLearningAgent:
-    def __init__(self):
+    def __init__(self, config):
         self.q_table = {}
-        self.alpha = ALPHA
-        self.gamma = GAMMA
-        self.epsilon = EPSILON
-        self.epsilon_decay = EPSILON_DECAY
-        self.epsilon_min = EPSILON_MIN
-
-    def get_q(self, state, action):
-        return self.q_table.get((tuple(state), tuple(action)), 0.0)
+        self.alpha = config["ALPHA"]
+        self.gamma = config["GAMMA"]
+        self.epsilon = config["EPSILON"]
+        self.epsilon_decay = config["EPSILON_DECAY"]
+        self.epsilon_min = config["EPSILON_MIN"]
+        self.action_space = config["EPSILON_MIN"]
 
     def choose_action(self, state, current_direction):
+        reversed_direction = (-current_direction[0], -current_direction[1])
+         
         if random.uniform(0, 1) < self.epsilon:
             # Definir las acciones válidas excluyendo la dirección opuesta
-            valid_actions = [action for action in ACTIONS if action != (-current_direction[0], -current_direction[1])]
+            valid_actions = [action for action in ACTIONS if action != (reversed_direction)]
             return random.choice(valid_actions)  # Exploración con restricción
         else:
             # Explotación: Elegir la mejor acción basada en la tabla Q
@@ -24,7 +25,7 @@ class QLearningAgent:
             best_action = max(q_values, key=q_values.get)
 
             # Asegurar que la mejor acción no sea la dirección contraria
-            if best_action == (-current_direction[0], -current_direction[1]):
+            if best_action == (reversed_direction):
                 valid_actions = [action for action in ACTIONS if action != best_action]
                 return random.choice(valid_actions)  # Escoge otra acción válida
 
@@ -60,8 +61,7 @@ class QLearningAgent:
             reward += REWARD_DANGER_ZONE
 
         # Actualización de la tabla Q
-        self.q_table[(tuple(state), tuple(action))] = (1 - self.alpha) * current_q + \
-            self.alpha * (reward + self.gamma * best_next_q)
+        self.q_table[(tuple(state), tuple(action))] = QLearningAlgroithm(self.alpha, self.gamma, reward, current_q, best_next_q)
 
     def decay_epsilon(self):
         self.epsilon = max(self.epsilon * self.epsilon_decay, self.epsilon_min)

@@ -4,6 +4,7 @@ import sys
 import pygame
 from snakegame import *
 from qlearning_agent import *
+from configuration import *
 
 if __name__ == "__main__":
     print("Selecciona una opción:")
@@ -15,7 +16,17 @@ if __name__ == "__main__":
 
     choice = input("Opción: ")
     game = SnakeGame()
-    agent = QLearningAgent()
+    
+    AGENT_CONFIG = {
+        "ALPHA": ALPHA,
+        "GAMMA": GAMMA,
+        "EPSILON": EPSILON,
+        "EPSILON_DECAY": EPSILON_DECAY,
+        "EPSILON_MIN": EPSILON_MIN,
+        "ACTIONS": ACTIONS,
+    }
+    
+    agent = QLearningAgent(AGENT_CONFIG)
 
     if choice == "1":
         num_episodes = NUM_EPISODES
@@ -32,15 +43,15 @@ if __name__ == "__main__":
             agent.epsilon = EPSILON_MIN  # Reducimos exploración para aprovechar lo aprendido
 
         #while actual_episode < num_episodes:
-        while game.score < 1000:
+        while game.score < 700:
             
             done = False
             state = game.reset()
             while not done:
+                valid_actions = [action for action in ACTIONS if action != (-game.direction[0], -game.direction[1])]
                 action = agent.choose_action(state, game.direction)
                 next_state, reward, done = game.step(action)
                 
-             
                 agent.update_q(state, action, reward, next_state)
                 state = next_state
             
