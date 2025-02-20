@@ -43,7 +43,7 @@ if __name__ == "__main__":
             agent.epsilon = EPSILON_MIN  # Reducimos exploración para aprovechar lo aprendido
 
         #while actual_episode < num_episodes:
-        while game.score < 700:
+        while game.score < 300:
             
             done = False
             state = game.reset()

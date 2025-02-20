@@ -16,12 +16,12 @@ EPSILON_MIN = 0.01  # Valor mínimo de epsilon
 NUM_EPISODES = 50000 # Número de episodios de entrenamiento
 
 # Recompensas
-REWARD_EAT = 40  # Recompensa por comer
-REWARD_MOVE_TOWARDS_FOOD = 0  # Recompensa por acercarse a la comida
-REWARD_MOVE_AWAY_FOOD = 0  # Penalización por alejarse de la comida
-REWARD_HIT_WALL = -100  # Penalización por chocar contra la pared
+REWARD_EAT = 50  # Recompensa por comer
+REWARD_MOVE_TOWARDS_FOOD = 30  # Recompensa por acercarse a la comida
+REWARD_MOVE_AWAY_FOOD = -10  # Penalización por alejarse de la comida
+REWARD_HIT_WALL = -50  # Penalización por chocar contra la pared
 REWARD_HIT_SELF = -100  # Penalización por chocar contra sí mismo
-REWARD_SAFE_MOVE = 0  # Recompensa por moverse sin alejarse de la comida
-REWARD_DANGER_ZONE = -1  # Penalización por moverse a una zona peligrosa
+REWARD_SAFE_MOVE = 20  # Recompensa por moverse sin alejarse de la comida
+REWARD_DANGER_ZONE = -10  # Penalización por moverse a una zona peligrosa
 REWARD_TRAPPED = 0  # Penalización fuerte por reducir demasiado el espacio disponible
 

@@ -96,6 +96,7 @@ class SnakeGame:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
+                break
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_UP and self.direction != DOWN:
                     self.direction = UP
@@ -105,6 +106,7 @@ class SnakeGame:
                     self.direction = LEFT
                 elif event.key == pygame.K_RIGHT and self.direction != LEFT:
                     self.direction = RIGHT
+                break  # Handle only one event per tick
     
     def draw(self):
         self.screen.fill(BLACK)
@@ -122,23 +124,39 @@ class SnakeGame:
         self.screen.blit(score_text, (WIDTH - 120, 10))
 
     def is_trapped(self):
-        head_x, head_y = self.snake[0]
-        free_spaces = 0
+        """
+        Determines if the snake is trapped by checking whether the head can reach the tail.
+        Uses a depth-first search (DFS) approach: if the tail is unreachable from the head
+        (ignoring the head itself as an obstacle), then the snake is considered trapped.
+        """
+        head = self.snake[0]
+        tail = self.snake[-1]
+        stack = [head]
+        visited = set()
 
-        # Verificar las direcciones disponibles (izquierda, derecha, arriba, abajo)
-        possible_moves = [
-            (head_x - GRID_SIZE, head_y),  # Izquierda
-            (head_x + GRID_SIZE, head_y),  # Derecha
-            (head_x, head_y - GRID_SIZE),  # Arriba
-            (head_x, head_y + GRID_SIZE)   # Abajo
-        ]
+        while stack:
+            current = stack.pop()
+            if current == tail:
+                # Tail is reachable, so the snake is not trapped.
+                return False
+            if current in visited:
+                continue
+            visited.add(current)
+            x, y = current
 
-        for move in possible_moves:
-            if move not in self.snake and 0 <= move[0] < WIDTH and 0 <= move[1] < HEIGHT:
-                free_spaces += 1
-
-        # Si hay menos de 2 espacios libres, está atrapado
-        return free_spaces < 2
+            # Explore the four neighboring cells.
+            for dx, dy in [(GRID_SIZE, 0), (-GRID_SIZE, 0), (0, GRID_SIZE), (0, -GRID_SIZE)]:
+                next_cell = (x + dx, y + dy)
+                # Check if the next cell is within the boundaries.
+                if not (0 <= next_cell[0] < WIDTH and 0 <= next_cell[1] < HEIGHT):
+                    continue
+                # Allow the tail cell even if it's part of the snake's body.
+                if next_cell in self.snake and next_cell != tail:
+                    continue
+                if next_cell not in visited:
+                    stack.append(next_cell)
+        print("Trapped!")
+        return True
 
 
 
