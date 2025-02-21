@@ -13,7 +13,7 @@ GAMMA = 0.9  # Descuento de recompensa futura
 EPSILON = 1.0  # Probabilidad de exploración inicial
 EPSILON_DECAY = 0.995  # Factor de reducción de exploración
 EPSILON_MIN = 0.01  # Valor mínimo de epsilon
-NUM_EPISODES = 50000 # Número de episodios de entrenamiento
+NUM_EPISODES = 2000 # Número de episodios de entrenamiento
 
 # Recompensas
 REWARD_EAT = 50  # Recompensa por comer
@@ -24,4 +24,6 @@ REWARD_HIT_SELF = -100  # Penalización por chocar contra sí mismo
 REWARD_SAFE_MOVE = 20  # Recompensa por moverse sin alejarse de la comida
 REWARD_DANGER_ZONE = -10  # Penalización por moverse a una zona peligrosa
 REWARD_TRAPPED = 0  # Penalización fuerte por reducir demasiado el espacio disponible
+REWARD_UNSAFE_ACTION = -20  # Penalización base por cada celda por debajo del umbral
+
 
