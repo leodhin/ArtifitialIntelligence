@@ -6,6 +6,36 @@ from snakegame import *
 from qlearning_agent import *
 from configuration import *
 
+def calculate_reward(state, action, next_state):
+    reward = 0
+    getting_closer = (state[0] and not next_state[1]) or (state[1] and not next_state[0]) or \
+                     (state[2] and not next_state[3]) or (state[3] and not next_state[2])
+
+    moving_away = (state[1] and not next_state[0]) or (state[0] and not next_state[1]) or \
+                  (state[3] and not next_state[2]) or (state[2] and not next_state[3])
+
+    if getting_closer:
+        reward += REWARD_MOVE_TOWARDS_FOOD
+    if moving_away:
+        reward += REWARD_MOVE_AWAY_FOOD
+
+    # Reforzar la penalización si la serpiente ya estaba atrapada en el estado anterior**
+    if state[8] and state[9] and state[10] and state[11]:  # Si hay paredes en todas direcciones
+            reward += REWARD_TRAPPED
+
+    # Penalización leve por moverse a zonas peligrosas
+    danger_zones = {
+        LEFT: state[8] or state[12],
+        RIGHT: state[9] or state[13],
+        UP: state[10] or state[14],
+        DOWN: state[11] or state[15]
+    }
+    
+    if danger_zones.get(tuple(action), False):
+        reward += REWARD_DANGER_ZONE
+
+    return reward
+
 if __name__ == "__main__":
     print("Selecciona una opción:")
     print("(1) Entrenar IA")
@@ -52,10 +82,13 @@ if __name__ == "__main__":
             done = False
             state = game.reset()
             while not done:
-                valid_actions = [action for action in ACTIONS if action != (-game.direction[0], -game.direction[1])]
-                action = agent.choose_action(state, game.direction)
+                action = agent.choose_action(state)
+                # Ensure the action is not the reverse of the current direction
+                if action == (-game.direction[0], -game.direction[1]):
+                    action = random.choice([a for a in ACTIONS if a != (-game.direction[0], -game.direction[1])])
                 next_state, reward, done = game.step(action)
                 
+                reward += calculate_reward(state, action, next_state)
                 agent.update_q(state, action, reward, next_state)
                 state = next_state
             
@@ -108,7 +141,7 @@ if __name__ == "__main__":
         state = game.reset()
         game.running = True
         while game.running:
-            action = agent.choose_action(state, game.direction)
+            action = agent.choose_action(state)
             state, _, done = game.step(action)
             game.draw()
             game.clock.tick(25)
