@@ -1,263 +1,220 @@
+import pickle
+import os
 import pygame
 import sys
 import time
 import math
+from qlearning_agent import *
+from configuration import *
+from RacingGame import RacingGame
 
-# Window settings and FPS
-WIDTH = 1280
-HEIGHT = 1280
-FPS = 60
+def calculate_reward(game, state, action):
+    car_posX = state[0]
+    car_posY = state[1]
+    car_angle = state[2]
+    car_speed = state[3]
+    
+    print("state", state)
+    new_pos = (car_posX + car_speed * action[0], car_posY + car_speed * action[1])
+    new_angle = car_angle + action[0]
+    new_speed = car_speed + action[1]
 
-# Define some colors
-WHITE = (255, 255, 255)
-GREEN = (0, 255, 0)
-BLACK = (0, 0, 0)
-RED = (200, 0, 0)
-GREY_REFERENCE = (111, 112, 115)  # Reference gray color for the road
+    if new_speed < 0:
+        new_speed = 0
 
-# Initialize pygame
-pygame.init()
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Racing Game with Image-based Tracks")
-clock = pygame.time.Clock()
-font = pygame.font.SysFont("Arial", 30)
+    if new_speed > MAX_SPEED:
+        new_speed = MAX_SPEED
 
-# Car class definition
-class Car:
-    def __init__(self, x, y):
-        # Load the car image (assuming car.png is in the same folder).
-        # Use convert_alpha() if the image has transparency.
-        car_image = pygame.image.load("pictures/car.png").convert_alpha()
-        
-        # Optionally, scale the image if it's too large or too small.
-        # Example: car_image = pygame.transform.scale(car_image, (50, 100))
+    if new_angle < 0:
+        new_angle += 360
+    if new_angle >= 360:
+        new_angle -= 360
 
-        # Keep the original image to handle rotation without losing quality.
-        self.original_image = car_image
-        self.image = self.original_image
+    new_state = (new_pos, new_angle, new_speed)
 
-        # Align the image so that its center is at (x, y).
-        self.rect = self.image.get_rect(center=(x, y))
+    if not game.car_on_track(game.car):
+        reward = -100
+        done = True
+    elif game.detect_lap(game.car):
+        reward = 100
+        done = False
+    else:
+        reward = 1
+        done = False
+    
+    return reward, new_state, done
 
-        # Position and movement parameters.
-        self.pos = pygame.math.Vector2(x, y)
-        self.angle = 0
-        self.speed = 1  # Initial speed, adjust as needed.
+def train_ai(game, agent):
+    num_episodes = NUM_EPISODES
+    actual_episode = 0
+    total_score = 0
+    average_score = 0
+    best_score = 0
 
-    def update(self):
-        # Move the car according to speed and angle.
-        rad = math.radians(self.angle)
-        self.pos.x += self.speed * math.cos(rad)
-        self.pos.y -= self.speed * math.sin(rad)
-        self.rect.center = (int(self.pos.x), int(self.pos.y))
-        self.speed += 0.001
+    check_interval = 1000
+    last_improvement_episode = 0
+    last_average_score = 0
 
-    def rotate(self, direction):
-        # Rotate the car: -1 for left, 1 for right
-        self.angle += direction * 3  # Rotation speed
-        self.image = pygame.transform.rotate(self.original_image, self.angle)
-        self.rect = self.image.get_rect(center=self.rect.center)
+    if os.path.exists("q_table.pkl"):
+        with open("q_table.pkl", "rb") as f:
+            agent.q_table = pickle.load(f)
+        print(f"Tabla Q cargada. Estadfos aprendidos: {len(agent.q_table)}")
+        agent.epsilon = EPSILON_MIN
 
-    def draw(self, surface):
-        surface.blit(self.image, self.rect)
+    while actual_episode < num_episodes:
+        Finished = False
+        state = game.reset()
+        while not Finished:
+            action = agent.choose_action(state)
+            print("action", game.car.direction)
+            if action == (-game.car.direction[0], -game.car.direction[1]):
+                action = random.choice([a for a in ACTIONS if a != (-game.car.direction[0], -game.car.direction[1])])
+            reward, done = calculate_reward(game, state, action)
+            next_state, reward, done = game.step(action)
+            # Update the Q-table
+            agent.update_q(state, action, reward, new_state)
+            
+            print("new_state", new_state)
+            Finished = done
 
-def load_track1():
-    """
-    Loads the first track image and returns:
-    1) The track surface
-    2) A start line rectangle for lap detection
-    """
-    track = pygame.image.load("pictures/track1.png").convert_alpha()
-    # Optionally resize the image to match WIDTH, HEIGHT if needed:
-    track = pygame.transform.scale(track, (WIDTH, HEIGHT))
-    # Define a start line rectangle. You can adjust these values
-    # depending on where you want the start line in the image.
-    # For example, near the top-left or any other region of the track.
-    start_line_rect = pygame.Rect(960, 135, 5, 105)  # Example position
-    # Set the rectangle color to white for better visibility
-    pygame.draw.rect(track, GREEN, start_line_rect)
-    return track, start_line_rect
+        total_score += game.score
+        best_score = max(best_score, game.score)
+        print(f"\rEpisodio {actual_episode + 1}/{num_episodes} - Mejor Score: {best_score} - Promedio Score: {average_score:.2f}", end='', flush=True)
+        actual_episode += 1
+        average_score = total_score / (actual_episode + 1)
+        agent.decay_epsilon()
 
-def load_track2():
-    """
-    Loads the second track image and returns:
-    1) The track surface
-    2) A start line rectangle for lap detection
-    """
-    track = pygame.image.load("pictures/track2.png").convert()
-    track = pygame.transform.scale(track, (WIDTH, HEIGHT))
-    # Define a start line rectangle in a suitable position
-    start_line_rect = pygame.Rect(380, 50, 40, 5)  # Example position
-    return track, start_line_rect
+        if (actual_episode - last_improvement_episode) >= check_interval:
+            if average_score - last_average_score < 1:
+                print("\nEl promedio de score no ha aumentado en 1 unidad en los últimos 1000 episodios. Deteniendo el entrenamiento.")
+                break
+            else:
+                last_average_score = average_score
+                last_improvement_episode = actual_episode
 
-def countdown():
-    counter = 3
-    while counter > 0:
+    with open("q_table.pkl", "wb") as f:
+        pickle.dump(agent.q_table, f)
+
+    print("\nEntrenamiento completado y guardado.")
+
+    with open("q_table_summary.txt", "w") as f:
+        for i, (key, value) in enumerate(agent.q_table.items()):
+            if i >= 50:
+                break
+            f.write(f"{key}: {value}\n")
+
+    print("Resumen de la tabla Q guardado en 'q_table_summary.txt'.")
+
+def play_with_ai(game, agent):
+    try:
+        with open("q_table.pkl", "rb") as f:
+            agent.q_table = pickle.load(f)
+        print(f"Tabla Q cargada. Estados aprendidos: {len(agent.q_table)}")
+    except FileNotFoundError:
+        print("No se encontró una tabla Q entrenada. Ejecuta el entrenamiento primero.")
+        exit()
+
+    agent.epsilon = agent.epsilon_min
+
+    game.start_game(1)  # Start the game with track 1 for AI play
+    state = (game.car.pos, game.car.angle, game.car.speed)  # Initialize the state
+    game.running = True
+    while game.running:
+        action = agent.choose_action(state)
+        if action == (-game.car.direction[0], -game.car.direction[1]):
+            action = random.choice([a for a in ACTIONS if a != (-game.car.direction[0], -game.car.direction[1])])
+        state, _, done = game.step(action)
+        game.draw()
+        game.clock.tick(25)
+    pygame.quit()
+
+def play_manual(game):
+    game.reset()
+    game.state = "playing"
+    while game.state == "playing":
+        game.screen.fill(BLACK)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-        screen.fill(BLACK)
-        text = font.render(str(counter), True, WHITE)
-        screen.blit(text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2 - text.get_height() // 2))
+
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_LEFT]:
+            game.car.rotate(1)
+        if keys[pygame.K_RIGHT]:
+            game.car.rotate(-1)
+
+        game.car.update()
+
+        if not game.car_on_track(game.car):
+            game.state = "game_over"
+
+        if game.detect_lap(game.car):
+            game.laps += 1
+            game.score += 100 * game.laps
+            game.lap_counted = True
+        if not game.start_line_rect.collidepoint(game.car.pos.x, game.car.pos.y):
+            game.lap_counted = False
+
+        game.screen.blit(game.track_surface, (0, 0))
+        game.car.draw(game.screen)
+        info = game.font.render(f"Laps: {game.laps}  Score: {game.score}", True, WHITE)
+        game.screen.blit(info, (WIDTH - info.get_width() - 20, 20))
         pygame.display.flip()
-        time.sleep(1)
-        counter -= 1
-    # Show "Go!"
-    screen.fill(BLACK)
-    text = font.render("Go!", True, WHITE)
-    screen.blit(text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2 - text.get_height() // 2))
-    pygame.display.flip()
-    time.sleep(1)
+        game.clock.tick(25)
 
-def color_is_road(color):
-    """
-    Determines if a given pixel color is considered "on the road."
-    We check if it's close to a reference grey. 
-    Adjust the threshold as needed based on your track's actual colors.
-    """
-    threshold = 10
-    r, g, b = color
-    ref1_r, ref1_g, ref1_b = GREY_REFERENCE
-    ref2_r, ref2_g, ref2_b = GREEN
-    # Check if the color is roughly within the threshold range of grey
-    
-    if ((abs(r - ref1_r) < threshold and
-        abs(g - ref1_g) < threshold and
-        abs(b - ref1_b) < threshold) or
-        (abs(r - ref2_r) < threshold and
-        abs(g - ref2_g) < threshold and
-        abs(b - ref2_b) < threshold)):
-        return True
-    
-    # and include green also as part of the road.
-    return False
+    if game.state == "game_over":
+        game.screen.fill(BLACK)
+        msg = game.font.render("Game Over!", True, RED)
+        msg2 = game.font.render(f"Laps: {game.laps}  Score: {game.score}", True, WHITE)
+        game.screen.blit(msg, (WIDTH // 2 - msg.get_width() // 2, HEIGHT // 2 - msg.get_height() // 2))
+        game.screen.blit(msg2, (WIDTH // 2 - msg2.get_width() // 2, HEIGHT // 2 + msg2.get_height()))
+        pygame.display.flip()
+        time.sleep(3)
+        game.reset()
 
-def car_on_track(track_surface, car):
-    """
-    Returns True if the car is on the grey road area (approx), False otherwise.
-    """
-    x = int(car.pos.x)
-    y = int(car.pos.y)
-    if x < 0 or x >= WIDTH or y < 0 or y >= HEIGHT:
-        return False
+def dump_database():
+    if os.path.exists("q_table.pkl"):
+        os.remove("q_table.pkl")
+        print("Tabla Q eliminada correctamente.")
+    else:
+        print("No hay una tabla Q guardada.")
 
-    color = track_surface.get_at((x, y))[:3]  # (R, G, B)
-    print(x, y, color)
-    return color_is_road(color)
-
-def detect_lap(car, start_line_rect, lap_counted):
-    if start_line_rect.collidepoint(car.pos.x, car.pos.y) and not lap_counted:
-        return True
-    return False
+    if os.path.exists("q_table_summary.txt"):
+        os.remove("q_table_summary.txt")
+        print("Resumen de la tabla Q eliminado.")
 
 def main():
-    state = "menu"
-    track_surface = None
-    start_line_rect = None
-    car = None
-    laps = 0
-    score = 0
-    lap_counted = False
+    print("Selecciona una opción:")
+    print("(1) Entrenar IA")
+    print("(2) Jugar con IA")
+    print("(3) Jugar manualmente")
+    print("(4) Borrar datos de la tabla Q")
 
-    while True:
-        if state == "menu":
-            screen.fill(BLACK)
-            title = font.render("Select a track:", True, WHITE)
-            option1 = font.render("1 - Track 1 (Image)", True, WHITE)
-            option2 = font.render("2 - Track 2 (Image)", True, WHITE)
-            screen.blit(title, (WIDTH // 2 - title.get_width() // 2, HEIGHT // 3))
-            screen.blit(option1, (WIDTH // 2 - option1.get_width() // 2, HEIGHT // 3 + 40))
-            screen.blit(option2, (WIDTH // 2 - option2.get_width() // 2, HEIGHT // 3 + 80))
-            pygame.display.flip()
+    choice = input("Opción: ")
+    game = RacingGame()
+    
+    AGENT_CONFIG = {
+        "ALPHA": ALPHA,
+        "GAMMA": GAMMA,
+        "EPSILON": EPSILON,
+        "EPSILON_DECAY": EPSILON_DECAY,
+        "EPSILON_MIN": EPSILON_MIN,
+        "ACTIONS": ACTIONS,
+    }
+    
+    agent = QLearningAgent(AGENT_CONFIG)
 
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_1:
-                        track_surface, start_line_rect = load_track1()
-                        car = Car(1050, 175)
-                        state = "countdown"
-                    elif event.key == pygame.K_2:
-                        track_surface, start_line_rect = load_track2()
-                        car = Car(WIDTH // 2, HEIGHT - 80)
-                        state = "countdown"
-
-        elif state == "countdown":
-            # Display start message: "Press Enter to start"
-            waiting = True
-            while waiting:
-                screen.fill(BLACK)
-                message = font.render("Press Enter to start", True, WHITE)
-                screen.blit(message, (WIDTH // 2 - message.get_width() // 2, HEIGHT // 2 - message.get_height() // 2))
-                pygame.display.flip()
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        pygame.quit()
-                        sys.exit()
-                    if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
-                        waiting = False
-            countdown()
-            state = "playing"
-
-        elif state == "playing":
-            screen.fill(BLACK)
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-
-            # Handle left and right arrow key inputs for steering
-            keys = pygame.key.get_pressed()
-            if keys[pygame.K_LEFT]:
-                car.rotate(1)
-            if keys[pygame.K_RIGHT]:
-                car.rotate(-1)
-
-            car.update()
-
-            # Check if the car is on the road (grey area)
-            if not car_on_track(track_surface, car):
-                state = "game_over"
-
-            # Detect crossing the start line to count a lap
-            if detect_lap(car, start_line_rect, lap_counted):
-                laps += 1
-                score += 100 * laps
-                lap_counted = True
-            # Once the car is no longer on the start line rect, we allow the next lap to be counted
-            if not start_line_rect.collidepoint(car.pos.x, car.pos.y):
-                lap_counted = False
-
-            # Draw the track and the car
-            screen.blit(track_surface, (0, 0))
-            car.draw(screen)
-            info = font.render(f"Laps: {laps}  Score: {score}", True, WHITE)
-            screen.blit(info, (WIDTH - info.get_width() - 20, 20))
-            pygame.display.flip()
-            clock.tick(FPS)
-
-        elif state == "game_over":
-            screen.fill(BLACK)
-            msg = font.render("Game Over!", True, RED)
-            msg2 = font.render(f"Laps: {laps}  Score: {score}", True, WHITE)
-            screen.blit(msg, (WIDTH // 2 - msg.get_width() // 2, HEIGHT // 2 - msg.get_height() // 2))
-            screen.blit(msg2, (WIDTH // 2 - msg2.get_width() // 2, HEIGHT // 2 + msg2.get_height()))
-            pygame.display.flip()
-            time.sleep(3)
-            state = "menu"
-            laps = 0
-            score = 0
-            car = None
-
-        # Placeholder for integrating Machine Learning in the future.
-        # For example, this could be used to adjust the difficulty or train an agent to drive.
-        # def apply_ml():
-        #     # ML code to analyze game data and adjust parameters goes here
-        #     pass
-        # apply_ml()
+    if choice == "1":
+        train_ai(game, agent)
+    elif choice == "2":
+        play_with_ai(game, agent)
+    elif choice == "3":
+        play_manual(game)
+    elif choice == "4":
+        dump_database()
+    else:
+        print("Opción no válida.")
 
 if __name__ == "__main__":
     main()
