@@ -31,15 +31,15 @@ def get_predictions(A2):
     return np.argmax(A2, 0)
 
 def preprocess_image(image):
-    image = image.convert('L')  # Convert to grayscale
-    image = image.resize((28, 28))  # Resize to 28x28
-    image = np.array(image).flatten() / 255.0  # Flatten to 1D array
-    image = image.reshape(784, 1)  # Reshape to (784, 1)
+    image = image.convert('L')
+    image = image.resize((28, 28))
+    image = np.array(image).flatten() / 255.0
+    image = image.reshape(784, 1)
     return image
 
 def predict(image, W1, b1, W2, b2):
     X = preprocess_image(image)
-    _, _, _, A2 = forward_prop(W1, b1, W2, b2, X)
+    _, _, _, A2 = forward_prop(W1, b1, W2, b2, X, 0)
     predictions = get_predictions(A2)
     return predictions
 

@@ -27,16 +27,15 @@ def get_predictions(A2):
 def get_accuracy(predictions, Y):
     return np.sum(predictions == Y) / Y.size
 
-def forward_prop(W1, b1, W2, b2, X, m):
-  Z1 = W1.dot(X) + b1
-  A1 = ReLU(Z1)
-  Z2 = W2.dot(A1) + b2
-  A2
-  if m == 1:
-    A2 = sigmoid(Z2)
-  else:
-    A2 = softmax(Z2)
-  return Z1, A1, Z2, A2
+def forward_prop(W1, b1, W2, b2, X, n_oputs):
+    Z1 = W1.dot(X) + b1
+    A1 = ReLU(Z1)
+    Z2 = W2.dot(A1) + b2
+    if n_oputs == 2:
+        A2 = sigmoid(Z2)
+    else:
+        A2 = softmax(Z2)
+    return Z1, A1, Z2, A2
 
 def backward_prop(Z1, A1, A2, W2, X, Y, m):
   one_hot_Y = one_hot(Y)
